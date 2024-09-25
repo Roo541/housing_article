@@ -1,0 +1,5 @@
+cluster,mse_LR,mse_Lasso,mse_Ridge,mse_En,mse_Average
+0,21,21,21,21,21
+1,14,14,14,14,14
+2,3,3,3,3,3
+3,25,25,25,25,25
