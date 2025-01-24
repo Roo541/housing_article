@@ -9,22 +9,23 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 ```
+Last modified: 2025-01-23
 
 ## Summary
 
 The methodology of price forecasting is interesting on its own, when applied to housing 
 data it tends to perk a few ears. This article focuses on developing multiple models, 
-regime analysis, and weighted ensembles taking into account performance in regimes.
+regime analysis, and weighted ensembles taking into account historical performance within regimes.
 This project is inspired by the phrase "wisdom of the crowd", which essentially 
-says that a collective groups aggregate opinions, predictions, judgements etc. 
+says that a collective groups aggregate opinions, predictions, judgement etc. 
 tend to be more accurate than one particular member. We draw an analogy to this phrase in model forecasting, 
 hence developing individual models with a common target variable and taking the
 aggregate forecast. Going a step further we create a dynamically weighted forecast
 which weights the models based on historical model performance within regimes. This conceptually
 makes sense as if we were out at trivia night with 5 friends (all whom have different specialties)
 though we would all have an answer to the trivia question within our group, the answer
-we go with would likely be weighted in favor of the friend who comes closest to
-overlapping of topic of the question and that friends field of expertise. 
+we go with would likely be weighted in favor of the friend whose field of expertise 
+overlaps the topic of the question. 
 
 ## The Data
 
@@ -53,10 +54,10 @@ knitr::include_graphics("corr_matrix.jpg")
 
 For the regime analysis we use some common indicators from FRED. Having talked to portfolio
 managers in the financial industry it seems that keeping the dataset simple when identifying regimes
-is not too far from what is actually practiced in the financial industry. We will be using Federal Funds Rate,
-Housing Starts, Unemployment Rate, and CPI all matching the RedFin frequency of monthly. We take into
-account look ahead bias by lagging the macro data by one month. As all but the Federal Funds Rate data
-comes out near the middle of the month for the previous month one month lag is suffice to keep things
+is not too far from what is actually practiced in the industry. We will be using Federal Funds Rate,
+Housing Starts, Unemployment Rate, and CPI all matching the RedFin frequency of monthly. We get rid of
+look ahead bias by lagging the macro data by one month. As all but the Federal Funds Rate data
+comes out near the middle of the month for the previous months value. A one month lag is suffice to keep things
 realistic. Below is a sample of the regimes dataset.
 
 
@@ -75,7 +76,7 @@ Machine Learning is a subset of the AI hype and to follow trends we incorporate
 multiple ML models in this article. However, because of the sparseness of the available dataset 
 (roughly 150 instances) models which require large amounts of data such as 
 ANN/DNN, Random Forest, and SVR were tested out and performed poorly. The regression models outperformed 
-hence the article will focus on Linear, Lasso, Ridge, and ElasticNet regression models.
+hence the article will focus on Linear, Lasso, Ridge, and Elastic Net regression models.
 All the models were predicting the same target variable of "Median Sale Price" for
 the next month, with the feature matrix taking into account the previous 24 months of data. 
 
@@ -86,7 +87,7 @@ regime models these include the instances from dates 1/12 to 7/23. Training of t
 50% of the data (1/12 to 10/16) in the stated date ranges, with 10% of the training data used for validation,
 with the remaining (11/16 to 7/23) instances used for testing. 
 
-The second split is for the instances within dates 8/23 to 7/24. This is the full testing 
+The second split is for the instances within dates 8/23 to 7/24. This is the final testing 
 period which we are able to test how the dynamically weighted forecast performs. 
 
 This is not the typical train/test split. It is done so that we can
@@ -99,12 +100,12 @@ Looking at the correlation plots we see multicollinearity. We attempt to address
 with the choice of models used. Linear Regression is the base case in which
 all features are used without addressing redundancy in the features. 
 
-We then use Lasso, Ridge, and ElasticNet Regression which address, feature selection, 
+We then use Lasso, Ridge, and Elastic Net Regression which address, feature selection, 
 multicollinearity, and overfitting via regularization. 
 Regularization techniques add penalty terms to the cost function by either L1 (Lasso), L2 (Ridge), or 
-a combination (L1 + L2) ElasticNet regression. 
+a combination (L1 + L2) Elastic Net regression. 
 
-The penalties terms added
+The penalty terms added
 to the cost function differ for Lasso from ridge in that it uses absolute value of 
 the coefficients as a penalty in which coefficients can be driven to 0. 
 This translates to potentially getting rid of some features all together 
@@ -116,23 +117,24 @@ them towards zero but does not completely get rid of them (optimal for dealing w
 multicollinearity). This differs from Lasso as it still utilizes all of the 
 features and does not throw any out. 
 
-ElasticNet is a mix of both Lasso and Ridge. It adds both penalty terms from 
+Elastic Net is a mix of both Lasso and Ridge. It adds both penalty terms from 
 Lasso and Ridge to its cost function. The strength of favoring one (L1 or L2)
 over the other is defined by a ratio (hyperparameter)
 and the strength of that ratio (another hyperparameter) can vary as well. 
 
 Overall these models have unique strengths in dealing with our feature matrix.
 Lasso is optimal for feature selection, ridge ideal for dealing with multicollinearity,
-and ElasticNet as a mix of both, with all three utilizing regularization techniques
+and Elastic Net is a mix of both, with all three utilizing regularization techniques
 to minimize overfitting. 
 
 #### Performance of the Models
 All models then had their applicable hyperparameters optimized via standard gridseach cv.
-That being done performance is measured off a scaled Mean Squared Error. The reason
+That being done, performance is measured off a scaled Mean Squared Error. The reason
 for scaling is due to the prices being large in the thousands of dollars, hence squaring
 any error becomes even more large. (All models did have their features data uniquely scaled).
 Below we see how the models performed in terms of MSE. The LR, and Ridge are
-essentially the same. The best performing model turned out to be Lasso, with an
+essentially the same (this is because the optimal  hyperparameter alpha for Ridge is near 0). 
+The best performing models turned out to be Lasso/Elastic Net, with an
 equally weighted average model coming in second. The weighted average model is just 
 that, it is the average of the ensembles forecast. 
 
@@ -154,17 +156,17 @@ regimes makes sense as it's a method to gauge what the overall environment is, a
 the regime is identified then the decision of what algorithm to deploy can be made.  
 
 For our particular project regimes were identified using unsupervised learning 
-on the macro economic dataset. We identify regimes on the same training 
+on the macro economic dataset. We identified regimes on the same training 
 time frame (11/16 to 7/23) to evaluate model performance within each regime. 
 These performance statistics will be the substance to the dynamically 
-weighted model during the testing period (8/23 to 7/24) as the regression
+weighted model during the final testing period (8/23 to 7/24) as the regression
 models will be weighted dependent on the historical performance evaluated during
 the training period. 
 
 #### Step by step breakdown of our regime analysis
 1. First we use Principal Component Analysis for dimensionality reduction of our macro economic dataset.
 2. Then we establish which K-means model to go with dependent on silhouette scores.
-3. With the time frames being alligned with the RedFin dataset we cross-reference
+3. With the time frames being aligned with the RedFin dataset we cross-reference
    and identify a regime for each month using the established K-means model. 
 4. Finally, performance (MSE) of how each model played out within the training 
    period (11/16 to 7/23) can be established. These metrics will be used 
@@ -181,7 +183,7 @@ print(performance_count)
 ```
 
 We then evaluate to see how the models performed during each regime. This is our
-sought after performance metric. We see that Lasso in general performed well in most
+sought after performance metric. We see that Lasso and Elastic Net in general performed well in most
 regimes. 
 ```{python, echo=FALSE}
 cluster_mse = pd.read_csv('cluster_analysis.csv')
@@ -217,9 +219,9 @@ print(weights_matrix)
 
 We then test out how our models would perform in the final testing period 8/23 to 7/24. 
 We have all 4 regression models, the average weight model, and the dynamically weighted
-model plots shown below. Keep in mind the reason the blue curve is shorter than the others is because
+model plots shown below. Keep in mind the reason the blue curve is shorter than the others are because
 in order for it to be calculated it required weights per identified regime.
-In order to come up with the weights we needed to evaluate performance 
+In order to come up with the weights, we needed to evaluate performance 
 (both regression, and K-means models) in the initial testing period (11/16-7/23). We now 
 see how all models performed for the remaining data (8/23-7/24) as shown below.
 ```{r, echo=FALSE, out.width="100%", fig.align='center'}
@@ -251,9 +253,9 @@ model outperforms all other models both visually and according to MSE. Linear an
 have had one to many at trivia night and the model's forecasting isn't particularly 
 coherent, however this is captured in the dynamically weighted model by limiting their 
 forecasting weights. During the final testing period the regime was consistently 
-identified as being regime 1 through our K-Means model. And historically during
-regime 1, the best performing models were Lasso and ElasticNet which
-got higher weighting (a bit more than 70%) compared to Linear and Ridge Regressions (less than 30%). 
+identified as being regime 3 through our K-Means model. And historically during
+regime 3, the best performing models were Lasso and Elastic Net which
+got higher weighting (around 70%) compared to Linear and Ridge Regressions (less than 30%). 
 Overall, it seems a dynamically weighted model plays out nicely. 
 
 
